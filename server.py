@@ -1,12 +1,15 @@
 import socket
 import time
 import datetime
-import thread
+import _thread
+import pickle
+import numpy as np
 
 MAX_USERS = 1000
 server_ip = "127.0.0.1" # Server ip
 server_port   = 12345 # Server Port
 
+'''
 DATABASE = {"user1": 
                 {
                 "Password": "pass",
@@ -18,7 +21,14 @@ DATABASE = {"user1":
                 "posts_private": [],
                 }
             } # Read from the file
+'''
 
+f = open("database.pkl","r")
+DATABASE = pickle.load(f)
+user_list = []
+for i in DATABASE:
+    user_list.append(i)
+f.close()
 
 def home_screen(username, socket_client):
     
@@ -40,30 +50,71 @@ def home_screen(username, socket_client):
         else:
             socket_client.send("Invalid Option!")
 
+def find_friend(username, socket_client):
+    while True:    
+        socket_client.send(
+            """
+            Find Friends        
+            1: Search for Friends
+            2: See Friends of Friends
+            0: Go to Friend Options
+            """)
+        option = socket_client.recv(1024)
+        if(option == "0"):
+            return
+        if(option == "1"):
+            socket_client.send("Enter the search query:\n")
+            query = socket_client.recv(1024)
+            response = "Search Results: \n"
+            count = 0
+            for i in user_list:
+                if i.find(query) != -1:
+                    each = str(count+1) + ". " + i + "\n"
+                    response += each
+                    count+=1
+            if(count == 0):
+                response = "No results found"
+            socket_client.send(response)
+        if(option == "2"):
+            if(len(DATABASE[username]['friends'] < 2)):
+                response = "Make more friends!"
+                socket_client.send(response)
+            else:
+                fof = []
+                for i in DATABASE[username]['friends']:
+                    for j in DATABASE[i]['friends']:
+                        fof.append(j)
+                fof = np.array(fof)
+                fof = np.unique(fof)
+                self_index = np.argwhere(fof==username)
+                fof = np.delete(fof,self_index)         # delete self
+    
 
 def friend_options(username, socket_client):
-    socket_client.send(
-        """
-        Friend Options        
-        1: See your Friends
-        2: Find new Friends
-        0: Go to Home Screen
-        """)
-    option = socket_client.recv(1024)
-    if(option == "0"):
-        return
-    if(option == "1"):
-        friend_list = DATABASE[username]["friends"]
-        response = "Your Friend List: \n"
-        for i in range(len(friend_list)):
-            if(DATABASE[friend_list[i]]["is_online"]):
-                status = "ONLINE"
-            else:
-                status = "Away"
-            each = str(i+1) + ". " + friend_list[i] + ":\t" + status + "\n"
-            response += each
-        socket_client.send(response)
-
+    while True:    
+        socket_client.send(
+            """
+            Friend Options        
+            1: See your Friends
+            2: Find new Friends
+            0: Go to Home Screen
+            """)
+        option = socket_client.recv(1024)
+        if(option == "0"):
+            return
+        if(option == "1"):
+            friend_list = DATABASE[username]["friends"]
+            response = "Your Friend List: \n"
+            for i in range(len(friend_list)):
+                if(DATABASE[friend_list[i]]["is_online"]):
+                    status = "ONLINE"
+                else:
+                    status = "Away"
+                each = str(i+1) + ". " + friend_list[i] + ":\t" + status + "\n"
+                response += each
+            socket_client.send(response)
+        if(option == "2"):
+            find_friend(username, socket_client)
 
 
 def check_username(username):
@@ -72,7 +123,13 @@ def check_username(username):
     return(1)
 def add_client(username,password):
     DATABASE[username]["Password"] = password
+    user_list.append(username)
+
     # Save to file
+    f = open("database.pkl", "wb")
+    pickle.dump(DATABASE,f)
+    f.close()
+
 
 def login(socket_client):
 
@@ -142,7 +199,7 @@ if(__name__ == "__main__"):
         socket_client, address = socket_tcp.accept()
         print("Client Connected:", address)
 
-        thread.start_new_thread(client_thread, (socket_client, address))
+        _thread.start_new_thread(client_thread, (socket_client, address))
         
         
 
