@@ -208,7 +208,6 @@ def check_username(username):
 def add_client(username,password):
     DATABASE[username] = {
                 "Password": "",
-                "socket_details": "",
                 "is_online": False,
                 "friends": [],
                 "pending_friend_requests" : [],
@@ -273,7 +272,6 @@ def client_thread(socket_client, address):
 
     user = login(socket_client)
     DATABASE[user]["is_online"] = True
-    DATABASE[user]["socket_details"] = socket_client
     home_screen(user, socket_client)
     DATABASE[user]["is_online"] = False
     print("closing thread: ", address)
