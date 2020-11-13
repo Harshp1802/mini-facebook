@@ -6,6 +6,7 @@ DATABASE = {"user1":
                 "is_online": False,
                 "friends": [],
                 "posts_visible_friends": [],
+                "pending_friend_requests": [],
                 "posts_global": [],
                 "posts_private": [],
                 }
