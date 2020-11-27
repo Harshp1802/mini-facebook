@@ -100,6 +100,9 @@ Friend Options
         if(option == "2"):
             find_friend(username, socket_client)
 
+        if(option == '3'):
+            remove_friend(DATABASE,username, socket_client)
+
 
 def client_thread(socket_client, address):
 

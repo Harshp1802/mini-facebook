@@ -168,7 +168,7 @@ def see_friends(DATABASE,username,socket_client):
         if(DATABASE[friend_list[i]]["is_online"]):
             status = "ONLINE"
         else:
-            status = "Away"
+            status = "Away" 
         each = str(i+1) + ". " + friend_list[i] + ":\t" + status + "\n"
         response += each
     response += "Enter a key to go back"
@@ -222,7 +222,7 @@ Welcome to Mini-Face: (Reply with)
     else:
         success = 0
         while(success != 1):
-            socket_client.send("Please Enter New Username: ".encode())
+            socket_client.send("Please Enter New Username (Max 32 Characters): ".encode())
             username = socket_client.recv(1024).decode()
             if(check_username(username,user_list) == 0):
                 socket_client.send("Username already Taken".encode())
@@ -265,7 +265,7 @@ def delete_post(DATABASE,username,socket_client):
                 continue
         if(flag_end):
             response += "End of Posts\n"
-        response += "0: Go Back\nenter post number to delete\n"
+        response += "0: Go Back\nenter post number to delete\nenter 5 to see next posts"
         socket_client.send(response.encode())
         response = ''
         answer = socket_client.recv(1024).decode()
@@ -279,10 +279,48 @@ def delete_post(DATABASE,username,socket_client):
             socket_client.send("Post successfully removed\n".encode())
             flag_end = True
         except:
-            flag_end = True
+            pass
         
         if(answer=="0" or flag_end):
             break
+
+def remove_friend(DATABASE,username,socket_client):
+    response = 'Your Friends\n\n'
+    my_friends = []
+    for i in DATABASE[username]['friends']:
+        my_friends.append(i)
+    my_friends.sort()    
+
+    flag_end = False
+    while(True):
+        ten_friends = []
+        for i in range(10):
+            try:
+                each = my_friends.pop(0)
+                ten_friends.append(each)
+                response = response + str(i+1) + ". " + each + "\n"
+            except:
+                flag_end = True
+                continue
+        if(flag_end):
+            response += "End of Friend List\n"
+        response += "0: Go Back\nenter number to remove friend\nenter 11 to see more friends"
+
+        socket_client.send(response.encode())
+        response = ''
+        answer = socket_client.recv(1024).decode()
+        
+        try:
+            f = ten_friends[int(answer)-1]
+            DATABASE[username]['friends'].remove(f)
+            socket_client.send("Friend successfully removed\n".encode())
+            flag_end = True
+        except:
+            pass
+        
+        if(answer=="0" or flag_end):
+            break
+
 
 
 

@@ -9,7 +9,7 @@ socket_client.connect((HOST, PORT))
 print("Connected to Server")
 
 while 1:
-    p, addr = socket_client.recvfrom(4096)
+    p, addr = socket_client.recvfrom(4096+1024)
     p = p.decode('utf-8')
 
     if(p=="Thank you for using Mini-Face"):
