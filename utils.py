@@ -164,15 +164,43 @@ def get_friends_of_friends(DATABASE,username,socket_client):
 def see_friends(DATABASE,username,socket_client):
     friend_list = DATABASE[username]["friends"] 
     response = "Your Friend List: \n"
-    for i in range(len(friend_list)):
-        if(DATABASE[friend_list[i]]["is_online"]):
-            status = "ONLINE"
-        else:
-            status = "Away" 
-        each = str(i+1) + ". " + friend_list[i] + ":\t" + status + "\n"
-        response += each
-    response += "Enter a key to go back"
-    socket_client.send(response.encode())
+    # for i in range(len(friend_list)):
+    #     if(DATABASE[friend_list[i]]["is_online"]):
+    #         status = "ONLINE"
+    #     else:
+    #         status = "Away" 
+    #     each = str(i+1) + ". " + friend_list[i] + ":\t" + status + "\n"
+    #     response += each
+    # response += "Enter a key to go back"
+    # socket_client.send(response.encode())
+
+
+    friend_list.sort()    
+    flag_end = False
+    while(True):
+        ten_friends = []
+        for i in range(10):
+            try:
+                each = friend_list.pop(0)
+                ten_friends.append(each)
+                if(DATABASE[each]["is_online"]):
+                    status = "ONLINE"
+                else:
+                    status = "Away" 
+                response += str(i+1) + ". " + each + ":\t" + status + "\n"
+            except:
+                flag_end = True
+                continue
+        if(flag_end):
+            response += "End of Friend List\n"
+        response += "0: Go Back\nenter number to check Friend timeline friend\nenter 11 to see more friends"
+
+        socket_client.send(response.encode())
+        response = ''
+        answer = socket_client.recv(1024).decode()
+        
+        if(answer=="0" or flag_end):
+            break
 
 def check_username(username, user_list):
     if(username in user_list):
