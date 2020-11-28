@@ -123,7 +123,7 @@ def search_user(DATABASE,username,socket_client,user_list):
     search_result = np.array(search_result)
     self_index = np.argwhere(search_result==username)
     search_result = np.delete(search_result,self_index)         # delete self
-    search_result = np.delete(search_result,np.argwhere(search_result in DATABASE[username]['friends'])) # delete client's friends
+    # search_result = np.delete(search_result,np.argwhere(search_result in DATABASE[username]['friends'])) # delete client's friends
     
     for i in search_result:
         each = str(count+1) + ". " + i + "\n"
