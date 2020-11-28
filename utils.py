@@ -193,7 +193,9 @@ def see_friends(DATABASE,username,socket_client):
                 continue
         if(flag_end):
             response += "End of Friend List\n"
-        response += "0: Go Back\nenter number to check Friend timeline friend\nenter 11 to see more friends"
+        response += "0: Go Back\nenter number to check Friend timeline friend\n"
+        if(not flag_end):
+            response+= "enter 11 to see more friends"
 
         socket_client.send(response.encode())
         response = ''
