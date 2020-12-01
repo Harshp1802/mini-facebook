@@ -1,3 +1,4 @@
+import socket
 import time
 from datetime import datetime
 import pickle
@@ -52,7 +53,7 @@ def get_feed(username,socket_client):
                 flag_end = True
                 continue
         if(flag_end):
-            response += "End of Posts\n"
+            response += "End of Posts\n0: Go Back\n"
             socket_client.send(response.encode())
             break
         else:
@@ -220,8 +221,6 @@ def add_client(user_list,username,password):
                 "posts_visible_friends": [],
                 "posts_global": [],
                 "posts_private": [],
-                "is_pending_request": False,
-                "is_pending_message": False,
                 "messages": defaultdict(list)
                 }
     database.DATABASE[username]["Password"] = password
@@ -358,7 +357,82 @@ def remove_friend(username,socket_client):
         if(answer=="0" or flag_end):
             break
 
+def chat_session(username, friend ,socket_client):
+    my_messages = database.DATABASE[username]['messages'][friend].copy()
+    my_messages = sorted(my_messages,key= lambda x: x[2],reverse=True) # sort by datetime
+    print(my_messages)
+    
+    while(True):
+        flag_end = False
+        response = '\n'
+        for i in range(4):
+            try:
+                each = my_messages.pop(0)
+                response = response + "{}:\t".format(each[0])
+                response = response + each[1] + "\n"
+                response = response + str(each[2]) + "\n"
+            except:
+                flag_end = True
+                continue
+        if(flag_end):
+            response += "End of Messages\n"
+        else:
+            response += "1: See Previous Messages\n"
+        response += "0: Go Back\n"
+        response += "2: Send Message\nr: refresh"
+        socket_client.send(response.encode())
+        response = ''
+        answer = socket_client.recv(1024).decode()
+        if(answer=="0"):
+            break
+        elif(answer=="r"):
+            my_messages = database.DATABASE[username]['messages'][friend].copy()
+            my_messages = sorted(my_messages,key= lambda x: x[2],reverse=True) # sort by datetime
+            continue
+        elif(answer=="2"):
+            socket_client.send("Enter Message to send (Max. 100 char)\n".encode())
+            msg = socket_client.recv(1024).decode()
+            database.DATABASE[username]['messages'][friend].append([username,msg,datetime.now()])
+            database.DATABASE[friend]['messages'][username].append([username,msg,datetime.now()])
+            my_messages = database.DATABASE[username]['messages'][friend].copy()
+            my_messages = sorted(my_messages,key= lambda x: x[2],reverse=True) # sort by datetime
+            continue
+                        
+def messages_options(username, socket_client):
+    friend_list = database.DATABASE[username]["friends"].copy()
+    response = "Friend List: \n"
 
-
+    friend_list.sort()    
+    flag_end = False
+    while(True):
+        ten_friends = []
+        for i in range(10):
+            try:
+                each = friend_list.pop(0)
+                ten_friends.append(each)
+                if(database.DATABASE[each]["is_online"]):
+                    status = "ONLINE"
+                else:
+                    status = "Away" 
+                response += str(i+1) + ". " + each + ":\t" + status + "\n"
+            except:
+                flag_end = True
+                continue
+        if(flag_end):
+            response += "End of Friend List\n"
+        response += "0: Go Back\n"
+        if(not flag_end):
+            response+= "Enter 11 to see more friends\n"
+        response+= "Enter Friend No. to open chat\n"
+        socket_client.send(response.encode())
+        response = ''
+        answer = socket_client.recv(1024).decode()
+        if(int(answer)>0 and int(answer)<11):
+            chat_session(username, ten_friends[int(answer)-1],socket_client)
+            friend_list = database.DATABASE[username]["friends"].copy() 
+            continue
+        if(answer=="0" or flag_end):
+            break
+    return
 
 

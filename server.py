@@ -1,3 +1,4 @@
+from os import truncate
 import socket
 import time
 import _thread
@@ -17,26 +18,29 @@ user_list = list(database.DATABASE.keys())
 # Declaring Functions
 def home_screen(username, socket_client):
     while(True):
+        star = ''
+        if(len(database.DATABASE[username]['pending_friend_requests'])):
+            star = '*'
         socket_client.send(
 """
 Welcome to Mini-Face
 Options: (Reply with)
 1: Friends
 2: Messages
-3: Pending Friend Requests
+3: Pending Friend Requests{}
 4: Feed
 5: Upload post
 6: Delete post
 7: See your Timeline
 0: Exit Mini-Face
-""".encode())
+""".format(star).encode())
         option = socket_client.recv(1024).decode()
 
         if(option == "1"):
             friend_options(username, socket_client)
         
         elif(option == "2"):
-            messages = 0 # Message options
+            messages_options(username, socket_client)
         
         elif(option == "3"):
             get_pending_requests(username,socket_client)
@@ -110,7 +114,6 @@ def client_thread(socket_client, address):
     try:
         user = login(user_list,socket_client)
         database.DATABASE[user]["is_online"] = True
-        # print(database.DATABASE)
         home_screen(user, socket_client)
         database.DATABASE[user]["is_online"] = False
         print("closing thread: ", address)
