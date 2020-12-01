@@ -69,6 +69,7 @@ Further selecting 'Friends' option, we can see our friends list, selecting optio
 	1: Search for Friends	--> Browse for username and the results matching with the string input will be listed with numbers associated with them, reply with the number associated with the username to send friend request to that user.
 	2: See Friends of Friends	--> We can see the mutual friends of our friends and then choos to send them friend request in the same way as stated above.	
 	0: Go to Friend Options		--> Go back to 'Friends' option
+
 Similarly, if we select 'Remove Friends' option, the friens list will be shown (only 10 friends), and to view the next 10 friends, we willl have to type '11'. And, to remove the friend, type the number coresponding to that username.
 
 2. By selecting the 'Messages' option, we will be provided a list of 10 friends along with their status (ONLINE/Away), and by typing '11', we will ge list of next 10 friends, and type the number coresponding to the username to initiate a chat session with him/her. We can send new messages, see previous messages or go back, by selecting the corrseponding option number.
@@ -82,6 +83,10 @@ Similarly, if we select 'Remove Friends' option, the friens list will be shown (
 6. By selecting the 'Delete post' option, the timeline will be shown (4 posts at a time), type '1' to see next 4 posts. Now, select the post number to delete that post.
 
 7. By selecting the 'See Your Timeline' option, the timeline will be shown (4 posts at a time), type '1' to see next 4 posts. Timestamp is also visible against each post and whether the post is private or global is also shown.
+
+At any stage, typing '0' will bring back to the home-screen page of the mini-face.
+
+Please note that replying with an empty string at any step while the mini-face is running, will result in an error. (So, do not send response as an empty string)
 
 ---
 
