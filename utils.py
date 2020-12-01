@@ -2,16 +2,11 @@ import time
 from datetime import datetime
 import pickle
 import numpy as np
+from collections import defaultdict 
+import database
 
-
-def load_data(data_path):
-    f = open(data_path,"rb")
-    DATABASE = pickle.load(f)
-    f.close()
-    return DATABASE
-
-def get_pending_requests(DATABASE,username,socket_client):
-    f_reqs = DATABASE[username]["pending_friend_requests"]
+def get_pending_requests(username,socket_client):
+    f_reqs = database.DATABASE[username]["pending_friend_requests"].copy()
     response = ''
     if(f_reqs):    
         response += "Pending Friend Requests:\n"
@@ -28,19 +23,21 @@ def get_pending_requests(DATABASE,username,socket_client):
             ans = socket_client.recv(1024).decode()
             
             if(ans=='y'):
-                DATABASE[username]['friends'].append(f_reqs[r_no-1])
-                DATABASE[f_reqs[r_no-1]]['friends'].append(username)
-            DATABASE[username]['pending_friend_requests'].remove(f_reqs[r_no-1])
+                database.DATABASE[username]['friends'].append(f_reqs[r_no-1])
+                database.DATABASE[f_reqs[r_no-1]]['friends'].append(username)
+            database.DATABASE[username]['pending_friend_requests'].remove(f_reqs[r_no-1])
+            # print(DATABASE)
+
     else:
         response = "No Pending Requests...\nPress a key to go back"
         socket_client.send(response.encode())
 
-def get_feed(DATABASE,username,socket_client):
+def get_feed(username,socket_client):
     response = "Your Feed\n\n"
     my_feed = []
-    my_friends = DATABASE[username]['friends']
+    my_friends = database.DATABASE[username]['friends'].copy()
     for friend in my_friends:
-        for post in DATABASE[friend]['posts_global']:
+        for post in database.DATABASE[friend]['posts_global']:
             my_feed.append([friend,post])
     my_feed = sorted(my_feed,key= lambda x: x[1][1],reverse=True)
 
@@ -66,7 +63,7 @@ def get_feed(DATABASE,username,socket_client):
             if(answer=="0"):
                 break
 
-def upload_post(DATABASE,username,socket_client):
+def upload_post(username,socket_client):
     response = "Please Type the content of the post (Max 125 characters)\n"
     socket_client.send(response.encode())
     post_content = socket_client.recv(1024).decode()
@@ -76,17 +73,17 @@ def upload_post(DATABASE,username,socket_client):
     post_timestamp = datetime.now()
     post = [post_content,post_timestamp]
     if post_visibility == 'p':
-        DATABASE[username]['posts_private'].append(post)
+        database.DATABASE[username]['posts_private'].append(post)
     else:   
-        DATABASE[username]['posts_global'].append(post)
+        database.DATABASE[username]['posts_global'].append(post)
     socket_client.send("Post uploaded, check Timeline\n".encode())
 
-def get_timeline(DATABASE,username,socket_client):
-    response = 'Your Timeline\n\n'
+def get_timeline(username,socket_client):
+    response = 'Timeline: \n\n'
     my_posts = []
-    for i in DATABASE[username]['posts_global']:
+    for i in database.DATABASE[username]['posts_global']:
         my_posts.append(i)
-    for i in DATABASE[username]['posts_private']:
+    for i in database.DATABASE[username]['posts_private']:
         my_posts.append(i)
     my_posts = sorted(my_posts,key= lambda x: x[1],reverse=True)
     
@@ -110,8 +107,9 @@ def get_timeline(DATABASE,username,socket_client):
             answer = socket_client.recv(1024).decode()
             if(answer=="0"):
                 break
+    return
    
-def search_user(DATABASE,username,socket_client,user_list):
+def search_user(username,socket_client,user_list):
     socket_client.send("Enter the search query:\n".encode())
     query = socket_client.recv(1024).decode()
     response = "Search Results: \n"
@@ -123,7 +121,7 @@ def search_user(DATABASE,username,socket_client,user_list):
     search_result = np.array(search_result)
     self_index = np.argwhere(search_result==username)
     search_result = np.delete(search_result,self_index)         # delete self
-    # search_result = np.delete(search_result,np.argwhere(search_result in DATABASE[username]['friends'])) # delete client's friends
+    # search_result = search_result - np.array(database.DATABASE[username]['friends']) # delete client's friends
     
     for i in search_result:
         each = str(count+1) + ". " + i + "\n"
@@ -131,49 +129,46 @@ def search_user(DATABASE,username,socket_client,user_list):
         count+=1
     if(count == 0):
         response = "No results found"
+        socket_client.send(response.encode())
     else:
         response += "Enter number to send friend request\n"
-    socket_client.send(response.encode())
-    friend_number = int(socket_client.recv(1024).decode())
+        socket_client.send(response.encode())
+        friend_number = int(socket_client.recv(1024).decode())
 
-    if username not in DATABASE[ search_result[friend_number-1] ]['pending_friend_requests']:       # check if already exists
-        DATABASE[ search_result[friend_number-1] ]['pending_friend_requests'].append(username)
+        if username not in database.DATABASE[ search_result[friend_number-1] ]['pending_friend_requests']:       # check if already exists
+            database.DATABASE[ search_result[friend_number-1] ]['pending_friend_requests'].append(username)
 
-def get_friends_of_friends(DATABASE,username,socket_client):
+def get_friends_of_friends(username,socket_client):
     fof = []
-    for i in DATABASE[username]['friends']:
-        for j in DATABASE[i]['friends']:
+    for i in database.DATABASE[username]['friends']:
+        for j in database.DATABASE[i]['friends']:
             fof.append(j)
     fof = np.array(fof)
     fof = np.unique(fof)
     self_index = np.argwhere(fof==username)
     fof = np.delete(fof,self_index)         # delete self
-    fof = fof - np.array(DATABASE[username]['friends']) # delete client's friends
+    fof = list(fof)
+    for i in database.DATABASE[username]['friends']:
+        if(i in fof):
+            fof.remove(i) # delete client's friends
+    
+    if(len(fof)!=0):
+        response = "Results:\n"
+        for i in range(len(fof)):
+            each = str(i+1) + ". " + fof[i] + "\n"
+            response += each
+        response += "Enter number to send friend request\n"
+        socket_client.send(response.encode())
+        friend_number = int(socket_client.recv(1024).decode())
+        if username not in database.DATABASE[ fof[friend_number-1] ]['pending_friend_requests']:     # check if already exists
+            database.DATABASE[ fof[friend_number-1] ]['pending_friend_requests'].append(username)
+    else:
+        response = "Nothing Found\n Press any key to continue\n"
+        socket_client.send(response.encode())
 
-    response = "Results:\n"
-    for i in range(len(fof)):
-        each = str(i+1) + ". " + fof[i] + "\n"
-        response += each
-    response += "Enter number to send friend request\n"
-    socket_client.send(response.encode())
-    friend_number = int(socket_client.recv(1024).decode())
-
-    if username not in DATABASE[ fof[friend_number-1] ]['pending_friend_requests']:     # check if already exists
-        DATABASE[ fof[friend_number-1] ]['pending_friend_requests'].append(username)
-
-def see_friends(DATABASE,username,socket_client):
-    friend_list = DATABASE[username]["friends"] 
-    response = "Your Friend List: \n"
-    # for i in range(len(friend_list)):
-    #     if(DATABASE[friend_list[i]]["is_online"]):
-    #         status = "ONLINE"
-    #     else:
-    #         status = "Away" 
-    #     each = str(i+1) + ". " + friend_list[i] + ":\t" + status + "\n"
-    #     response += each
-    # response += "Enter a key to go back"
-    # socket_client.send(response.encode())
-
+def see_friends(username,socket_client):
+    friend_list = database.DATABASE[username]["friends"].copy()
+    response = "Friend List: \n"
 
     friend_list.sort()    
     flag_end = False
@@ -183,7 +178,7 @@ def see_friends(DATABASE,username,socket_client):
             try:
                 each = friend_list.pop(0)
                 ten_friends.append(each)
-                if(DATABASE[each]["is_online"]):
+                if(database.DATABASE[each]["is_online"]):
                     status = "ONLINE"
                 else:
                     status = "Away" 
@@ -193,24 +188,31 @@ def see_friends(DATABASE,username,socket_client):
                 continue
         if(flag_end):
             response += "End of Friend List\n"
-        response += "0: Go Back\nenter number to check Friend timeline friend\n"
+        response += "0: Go Back\nEnter number to check Friend timeline friend\n"
         if(not flag_end):
-            response+= "enter 11 to see more friends"
-
+            response+= "Enter 11 to see more friends\n"
+        response+= "Enter Friend No. to see his Timeline\n"
         socket_client.send(response.encode())
         response = ''
         answer = socket_client.recv(1024).decode()
-        
+        if(int(answer)>0 and int(answer)<11):
+            r = "Showing Timeline of " + ten_friends[int(answer)-1] 
+            r+= "\nPress Enter\n"
+            socket_client.send(r.encode())
+            get_timeline(ten_friends[int(answer)-1],socket_client)
+            friend_list = database.DATABASE[username]["friends"].copy() 
+            continue
         if(answer=="0" or flag_end):
             break
+    return
 
 def check_username(username, user_list):
     if(username in user_list):
         return(0)
     return(1)
 
-def add_client(DATABASE,user_list,username,password):
-    DATABASE[username] = {
+def add_client(user_list,username,password):
+    database.DATABASE[username] = {
                 "Password": "",
                 "is_online": False,
                 "friends": [],
@@ -218,13 +220,16 @@ def add_client(DATABASE,user_list,username,password):
                 "posts_visible_friends": [],
                 "posts_global": [],
                 "posts_private": [],
+                "is_pending_request": False,
+                "is_pending_message": False,
+                "messages": defaultdict(list)
                 }
-    DATABASE[username]["Password"] = password
+    database.DATABASE[username]["Password"] = password
     user_list.append(username)
 
-    write_database("database.pkl", DATABASE)
+    write_database("database.pkl")
 
-def login(DATABASE,user_list,socket_client):
+def login(user_list,socket_client):
     username = ''
     password = ''
     socket_client.send(
@@ -240,13 +245,13 @@ Welcome to Mini-Face: (Reply with)
         username = socket_client.recv(1024).decode()
         socket_client.send("Password: ".encode())
         password = socket_client.recv(1024).decode()
-        if(check_username(username, user_list) == 0 and DATABASE[username]["Password"] == password):
+        if(check_username(username, user_list) == 0 and database.DATABASE[username]["Password"] == password):
             socket_client.send("Login Succesfull\nPress a key to continue".encode())
             return username
         else:
-            socket_client.send("Invalid Username/Password".encode())
-            time.sleep(1)
-            user = login(socket_client)
+            socket_client.send("Invalid Username/Password\n Press any key to continue\n".encode())
+            # time.sleep(0.5)
+            user = login(user_list, socket_client)
             return user
 
     else:
@@ -262,23 +267,23 @@ Welcome to Mini-Face: (Reply with)
             socket_client.send("Please Confirm New Password: ".encode())
             password_C = socket_client.recv(1024).decode()
             if(password != password_C):
-                socket_client.send("Password does not match".encode())
+                socket_client.send("Password does not match\n".encode())
             else:
                 success = 1
-        add_client(DATABASE,user_list,username,password)
+        add_client(user_list,username,password)
         return username
 
-def write_database(save_dir, DATABASE):
+def write_database(save_dir):
     f = open(save_dir, "wb")
-    pickle.dump(DATABASE,f)
+    pickle.dump(database.DATABASE,f)
     f.close()
 
-def delete_post(DATABASE,username,socket_client):
+def delete_post(username,socket_client):
     response = 'Your Timeline\n\n'
     my_posts = []
-    for i in DATABASE[username]['posts_global']:
+    for i in database.DATABASE[username]['posts_global']:
         my_posts.append(i)
-    for i in DATABASE[username]['posts_private']:
+    for i in database.DATABASE[username]['posts_private']:
         my_posts.append(i)
     my_posts = sorted(my_posts,key= lambda x: x[1],reverse=True)
     
@@ -295,7 +300,9 @@ def delete_post(DATABASE,username,socket_client):
                 continue
         if(flag_end):
             response += "End of Posts\n"
-        response += "0: Go Back\nenter post number to delete\nenter 5 to see next posts"
+        response += "0: Go Back\nenter post number to delete\n"
+        if(not flag_end):
+            response+= "enter 5 to see next posts\n"
         socket_client.send(response.encode())
         response = ''
         answer = socket_client.recv(1024).decode()
@@ -303,9 +310,9 @@ def delete_post(DATABASE,username,socket_client):
         try:
             post = four_posts[int(answer)-1]
             try:
-                DATABASE[username]['posts_global'].remove(post)
+                database.DATABASE[username]['posts_global'].remove(post)
             except:
-                DATABASE[username]['posts_private'].remove(post)
+                database.DATABASE[username]['posts_private'].remove(post)
             socket_client.send("Post successfully removed\n".encode())
             flag_end = True
         except:
@@ -314,12 +321,11 @@ def delete_post(DATABASE,username,socket_client):
         if(answer=="0" or flag_end):
             break
 
-def remove_friend(DATABASE,username,socket_client):
-    response = 'Your Friends\n\n'
-    my_friends = []
-    for i in DATABASE[username]['friends']:
-        my_friends.append(i)
-    my_friends.sort()    
+def remove_friend(username,socket_client):
+    response = 'Your Friends\n'
+    print(database.DATABASE)
+    my_friends = database.DATABASE[username]["friends"].copy()
+    # my_friends.sort()    
 
     flag_end = False
     while(True):
@@ -328,25 +334,26 @@ def remove_friend(DATABASE,username,socket_client):
             try:
                 each = my_friends.pop(0)
                 ten_friends.append(each)
-                response = response + str(i+1) + ". " + each + "\n"
-            except:
+                response += str(i+1) + ". " + each + "\n"
+            except Exception as e:
                 flag_end = True
+                print(e)
                 continue
         if(flag_end):
             response += "End of Friend List\n"
-        response += "0: Go Back\nenter number to remove friend\nenter 11 to see more friends"
-
+        response += "0: Go Back\nenter number to remove friend\n"
+        if(not flag_end):
+            response+= "enter 11 to see more friends\n"
         socket_client.send(response.encode())
         response = ''
         answer = socket_client.recv(1024).decode()
         
-        try:
+        if(int(answer)> 0 and int(answer)<11):
             f = ten_friends[int(answer)-1]
-            DATABASE[username]['friends'].remove(f)
+            database.DATABASE[username]['friends'].remove(f)
+            database.DATABASE[f]['friends'].remove(username)
             socket_client.send("Friend successfully removed\n".encode())
             flag_end = True
-        except:
-            pass
         
         if(answer=="0" or flag_end):
             break

@@ -1,4 +1,6 @@
 import pickle
+from collections import defaultdict 
+
 DATABASE = {"user1": 
                 {
                 "Password": "pass",
@@ -8,6 +10,9 @@ DATABASE = {"user1":
                 "pending_friend_requests": [],
                 "posts_global": [],
                 "posts_private": [],
+                "is_pending_request": False,
+                "is_pending_message": False,
+                "messages": defaultdict(list)
                 }
             } # Read from the file
 

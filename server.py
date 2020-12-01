@@ -1,8 +1,8 @@
 import socket
 import time
 import _thread
+import database
 from utils import *
-
 # Server Configuration
 
 MAX_USERS = 1000
@@ -10,8 +10,9 @@ server_ip = "127.0.0.1" # Server ip
 server_port   = 12345 # Server Port
 
 # Loading the Database and the users list
-DATABASE = load_data("database.pkl")
-user_list = list(DATABASE.keys())
+# DATABASE = load_data("database.pkl")
+database.load_data()
+user_list = list(database.DATABASE.keys())
 
 # Declaring Functions
 def home_screen(username, socket_client):
@@ -30,6 +31,7 @@ Options: (Reply with)
 0: Exit Mini-Face
 """.encode())
         option = socket_client.recv(1024).decode()
+
         if(option == "1"):
             friend_options(username, socket_client)
         
@@ -37,19 +39,19 @@ Options: (Reply with)
             messages = 0 # Message options
         
         elif(option == "3"):
-            get_pending_requests(DATABASE,username,socket_client)
+            get_pending_requests(username,socket_client)
             
         elif(option == "4"):
-            get_feed(DATABASE,username,socket_client)
+            get_feed(username,socket_client)
 
         elif(option == "5"):
-            upload_post(DATABASE,username,socket_client)
+            upload_post(username,socket_client)
             
         elif(option == "6"):
-            delete_post(DATABASE,username,socket_client)
+            delete_post(username,socket_client)
         
         elif(option == "7"):
-            get_timeline(DATABASE,username,socket_client)
+            get_timeline(username,socket_client)
             
         elif(option == "0"):
             return
@@ -71,14 +73,14 @@ Find Friends
             return
         
         if(option == "1"):
-            search_user(DATABASE,username,socket_client,user_list)
+            search_user(username,socket_client,user_list)
 
         if(option == "2"):
-            if(len(DATABASE[username]['friends']) < 2):
+            if(len(database.DATABASE[username]['friends']) < 2):
                 response = "Make more friends!"
                 socket_client.send(response.encode())
             else:
-                get_friends_of_friends(DATABASE,username,socket_client)
+                get_friends_of_friends(username,socket_client)
     
 def friend_options(username, socket_client):
     while True:    
@@ -95,26 +97,33 @@ Friend Options
             return
         
         if(option == "1"):
-            see_friends(DATABASE,username,socket_client)
+            see_friends(username,socket_client)
         
         if(option == "2"):
             find_friend(username, socket_client)
 
         if(option == '3'):
-            remove_friend(DATABASE,username, socket_client)
+            remove_friend(username, socket_client)
 
 
 def client_thread(socket_client, address):
+    try:
+        user = login(user_list,socket_client)
+        database.DATABASE[user]["is_online"] = True
+        # print(database.DATABASE)
+        home_screen(user, socket_client)
+        database.DATABASE[user]["is_online"] = False
+        print("closing thread: ", address)
+        socket_client.send("Thank you for using Mini-Face".encode())
+        time.sleep(0.5)
+        write_database("database.pkl")
+        socket_client.close()
+    except Exception as e:
+        print("ENDING", e)
+        database.DATABASE[user]["is_online"] = False
+        write_database("database.pkl")
+        socket_client.close()
 
-    user = login(DATABASE,user_list,socket_client)
-    DATABASE[user]["is_online"] = True
-    home_screen(user, socket_client)
-    DATABASE[user]["is_online"] = False
-    print("closing thread: ", address)
-    socket_client.send("Thank you for using Mini-Face".encode())
-    time.sleep(0.5)
-    write_database("database.pkl",DATABASE)
-    socket_client.close()
      
 
 if(__name__ == "__main__"): 
