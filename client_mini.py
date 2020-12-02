@@ -1,7 +1,9 @@
 import time
 import socket
 import getpass
-
+import sys
+number = sys.argv[1]
+sys.stdin = open("./mininet_helper/input{}.txt".format(number),'r')
 HOST = "10.0.0.33"
 PORT = 12345
 

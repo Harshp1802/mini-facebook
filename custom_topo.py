@@ -52,44 +52,16 @@ class CustomTopo( Topo ):
             exec("self.addLink(E{}, H{}, bw=bandwidth/32)".format(i,2*(i-1) + 1))
             exec("self.addLink(E{}, H{}, bw=bandwidth/32)".format(i,2*(i-1) + 2))
         
-
-# def xecute(X):
-#     h = X[0]
-#     i = X[1]
-#     print("Exec" ,i)
-#     h[i].sendCmd("python3 client.py")
-#     return "Done"
-
 if __name__ == "__main__":
     setLogLevel("info")
     topo = CustomTopo()
     net = Mininet(topo,link = TCLink, controller = OVSController)
-    # print("HI")
     net.start()
-    # dumpNetConnections(net)
-    # print("HI")
-    # CLI()
-    # net.pingAll()
     print(net.hosts)
-    net.hosts[-1].write("python3 server_mini.py \n")
-    print("Starting")
+    net.hosts[-1].sendCmd("python3 server_mini.py &")
+    print("Starting Server")
 
     for i in range(32):
-        net.hosts[i].write("python3 client.py \n")
-    print("all clients started")
-    time.sleep(2.5)
-    for i in range(32):
-        net.hosts[i].write("2\n")
-        time.sleep(0.1)
-        net.hosts[i].write("user{}\n".format(i+1))
-        time.sleep(0.1)
-        net.hosts[i].write("pass{}\n".format(i+1))
-        time.sleep(0.1)
-        net.hosts[i].write("pass{}\n".format(i+1))
-        time.sleep(0.1)
-        net.hosts[i].write("{}\n".format(i+1))
-        time.sleep(0.1)
-        net.hosts[i].write("0")
-        print(str(i)+" done")                        
-    time.sleep(0.1)    
+        net.hosts[i].sendCmd("python3 client.py {} &".format(i+1))
+    time.sleep(5)
     cleanup()
