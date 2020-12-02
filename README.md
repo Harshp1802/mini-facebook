@@ -41,6 +41,9 @@ Key features that we implemented in this project are-
 
 First of all after starting the server, run the client file.
 
+python server.py
+python client.py [For each client]
+
 While using the mini-face, at each step, the server provides a list of options to choose from and those particular options can be selecting by simply typing the number associated with them. The server responds on the basis of the response obtained from the client.
 
 So, at first, we will be provided with two options: Login or Register. We can type the appropriate number associated with the option that we want.
@@ -95,7 +98,7 @@ Please note that replying with an empty string at any step while the mini-face i
 ### Logical Flow
 
 <p align="center">
-  <img width="500" src="Logical Flow.png">
+  <img width="500" src="Logical FLow.png">
 </p>
 
 ### Class Diagrams
