@@ -92,28 +92,33 @@ Please note that replying with an empty string at any step while the mini-face i
 
 ## Networking Paradigms
 
-### Mirroring (File Backup)
+### Logical Flow
 
 <p align="center">
-  <img width="500" src="extra/databackup.png">
+  <img width="500" src="Logical Flow.png">
 </p>
 
-### Home - Work Collaboration
+### Class Diagrams
 
 <p align="center">
-  <img width="500" src="extra/homeoffice.png">
+  <img width="500" src="Class Diagrams.png">
 </p>
 
-### Team Collaboration
+### Use-Cases
 
 <p align="center">
-  <img width="500" src="extra/teamcolab.png">
+  <img width="500" src="Use-Case.png">
 </p>
 
 ---
 
 ## Mininet
 
+We used the Mininet Topology to automate and create a large number of user base (Client nodes).  We use a Simple Tree topology with Depth=5 that allows us to have up to a total of 32 leaf hosts.
 
+The implementation can cbe seen in the custom_topo.py in the root folder.
+Server: server_mini.py
+Client: client_mini.py
 
+We use mininet_helper.py to build the input functions for the client hosts that caonnect to through the Mininet and set up a new account.
 ---
