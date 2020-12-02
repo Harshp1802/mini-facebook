@@ -3,7 +3,7 @@ from collections import defaultdict
 
 DATABASE = {"user1": 
                 {
-                "Password": "pass",
+                "Password": "pass1",
                 "is_online": False,
                 "friends": [],
                 "posts_visible_friends": [],
