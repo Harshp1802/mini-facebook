@@ -2,7 +2,7 @@ import time
 import socket
 import getpass
 
-HOST = "127.0.0.1"
+HOST = "10.0.0.1"
 PORT = 12345
 
 socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
