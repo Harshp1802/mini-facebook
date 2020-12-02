@@ -5,5 +5,5 @@ for i in range(32):
     f.write("pass{}\n".format(str(i+1)))
     f.write("pass{}\n".format(str(i+1)))
     f.write("0\n")
-    f.write("0\n")
+    f.write("0")
     f.close()

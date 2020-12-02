@@ -4,7 +4,7 @@ import getpass
 import sys
 number = sys.argv[1]
 sys.stdin = open("./mininet_helper/input{}.txt".format(number),'r')
-HOST = "10.0.0.33"
+HOST = "10.0.0.1"
 PORT = 12345
 
 socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
