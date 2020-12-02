@@ -7,7 +7,7 @@ from utils import *
 # Server Configuration
 
 MAX_USERS = 1000
-server_ip = "10.0.0.1" # Server ip
+server_ip = "10.0.0.33" # Server ip
 server_port   = 12345 # Server Port
 
 # Loading the Database and the users list
